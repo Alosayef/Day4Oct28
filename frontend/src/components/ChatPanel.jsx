@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { api } from '../api.js';
 
 const SUGGESTIONS = ['Show all customers', 'Find customer Salman', 'Add Sara Ahmed in Riyadh'];
@@ -41,7 +43,11 @@ export default function ChatPanel({ onDataChanged }) {
       <div className="messages">
         {messages.map((m, i) => (
           <div key={i} className={`msg ${m.role}${m.error ? ' error' : ''}`}>
-            <div className="bubble">{m.text}</div>
+            <div className="bubble">
+              {m.role === 'assistant' && !m.error
+                ? <Markdown remarkPlugins={[remarkGfm]}>{m.text}</Markdown>
+                : m.text}
+            </div>
             {m.tools?.length > 0 && (
               <div className="tools">
                 {m.tools.map((t, j) => <span key={j} className="chip">⚙ {t.name}</span>)}
