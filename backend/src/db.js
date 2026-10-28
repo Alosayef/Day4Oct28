@@ -3,6 +3,7 @@ import pg from 'pg';
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }, // Render requires SSL
+  max: 3, // small pool: each serverless instance holds its own connections
 });
 
 export const customers = {

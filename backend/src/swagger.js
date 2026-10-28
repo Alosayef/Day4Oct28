@@ -1,4 +1,9 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import swaggerJsdoc from 'swagger-jsdoc';
+
+// Absolute path so the route docs are found regardless of the process cwd (e.g. on Vercel)
+const routesGlob = path.join(path.dirname(fileURLToPath(import.meta.url)), 'routes', '*.js').replace(/\\/g, '/');
 
 export default swaggerJsdoc({
   definition: {
@@ -29,5 +34,5 @@ export default swaggerJsdoc({
       },
     },
   },
-  apis: ['./src/routes/*.js'],
+  apis: [routesGlob],
 });

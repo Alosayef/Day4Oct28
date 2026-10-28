@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api } from './api.js';
+import { api, API_URL } from './api.js';
 import CustomerTable from './components/CustomerTable.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import './App.css';
@@ -56,7 +56,7 @@ export default function App() {
       <nav className="topbar">
         <span className="logo">◆</span>
         <strong>Customer Hub</strong>
-        <a href="http://localhost:4000/swagger" target="_blank" rel="noreferrer">API docs ↗</a>
+        <a href={`${API_URL}/swagger`} target="_blank" rel="noreferrer">API docs ↗</a>
       </nav>
       <main className="layout">
         <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} />
