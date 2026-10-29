@@ -35,7 +35,7 @@ One customer can have many deals over time: brochures this month, ID cards next 
 
 ## 4. Data model
 
-New table `deal`, added by a new migration `backend/db/migrations/002_deals.sql` (idempotent, `IF NOT EXISTS`, like migration 001):
+New table `deal`, added by a new migration `backend/db/migrations/003_deals.sql` (idempotent, `IF NOT EXISTS`, like migration 001):
 
 | Column | Type | Notes |
 |---|---|---|
@@ -127,7 +127,7 @@ All endpoints require a Bearer token (same middleware as the other customer endp
 
 ## 8. Configuration and deployment
 
-- One database change: migration `002_deals.sql`, run once against the Render Postgres database before deploying the backend (same process as migration 001; document the step in the README).
+- One database change: migration `003_deals.sql`, run once against the Render Postgres database before deploying the backend (same process as migrations 001 and 002; document the step in the README).
 - No new dependencies, no new environment variables.
 - README: add a short "Deals" section (what a deal is, the stages, the endpoints, link to this spec).
 
@@ -152,7 +152,7 @@ All endpoints require a Bearer token (same middleware as the other customer endp
 8. The UI lets a user add, edit, change the stage of, and delete a deal from a customer's deals panel, shows amounts as `$150,000`, shows the empty state, shows the open-deals summary, and shows an error toast on failure.
 9. The delete-customer confirmation warns when the customer has deals.
 10. Swagger UI documents all five endpoints under `Deals`.
-11. Migration `002_deals.sql` can be run twice without error, and the deployed Vercel backend passes criteria 1 to 7.
+11. Migration `003_deals.sql` can be run twice without error, and the deployed Vercel backend passes criteria 1 to 7.
 
 ## 11. Decisions
 
