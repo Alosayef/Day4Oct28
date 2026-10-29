@@ -43,6 +43,21 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
+  const exportToExcel = async () => {
+    try {
+      const { blob, filename } = await api.exportCustomers();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      notify('Export downloaded');
+    } catch (err) {
+      notify(`Export failed: ${err.message}`, true);
+    }
+  };
+
   const remove = async (c) => {
     if (!window.confirm(`Delete ${c.customername}?`)) return;
     try {
@@ -64,7 +79,7 @@ function Dashboard({ user, onLogout }) {
         <button className="btn" onClick={onLogout}>Log out</button>
       </nav>
       <main className="layout">
-        <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} />
+        <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} onExport={exportToExcel} />
         <ChatPanel onDataChanged={load} />
       </main>
       {toast && <div className={`toast${toast.error ? ' error' : ''}`}>{toast.text}</div>}

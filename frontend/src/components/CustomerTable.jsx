@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-export default function CustomerTable({ customers, loading, onSave, onDelete }) {
+export default function CustomerTable({ customers, loading, onSave, onDelete, onExport }) {
+  const [exporting, setExporting] = useState(false);
   const [editing, setEditing] = useState(null); // customer_id being edited
   const [draft, setDraft] = useState({ customername: '', location: '' });
   const [adding, setAdding] = useState({ customername: '', location: '' });
@@ -24,6 +25,11 @@ export default function CustomerTable({ customers, loading, onSave, onDelete }) 
     if (await onSave(id, draft)) setEditing(null);
   };
 
+  const exportClick = async () => {
+    setExporting(true);
+    try { await onExport(); } finally { setExporting(false); }
+  };
+
   return (
     <section className="card">
       <header className="card-head">
@@ -34,6 +40,9 @@ export default function CustomerTable({ customers, loading, onSave, onDelete }) 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <button className="btn" type="button" onClick={exportClick} disabled={exporting}>
+          {exporting ? 'Exporting…' : 'Export to Excel'}
+        </button>
       </header>
 
       <form className="add-row" onSubmit={submitAdd}>

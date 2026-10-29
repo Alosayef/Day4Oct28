@@ -39,7 +39,23 @@ async function request(path, options = {}) {
   return data;
 }
 
+// The export is a binary file, so it cannot go through request() (which parses JSON)
+async function exportCustomers() {
+  const token = session.token();
+  const res = await fetch(`${API_URL}/api/customers/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && token) onUnauthorized();
+    throw new Error(data.error || `Request failed (${res.status})`);
+  }
+  const match = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') || '');
+  return { blob: await res.blob(), filename: match ? match[1] : 'customers.xlsx' };
+}
+
 export const api = {
+  exportCustomers,
   register: (body) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   adminLogin: (body) => request('/api/admin/login', { method: 'POST', body: JSON.stringify(body) }),

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import ExcelJS from 'exceljs';
 import { customers } from '../db.js';
 
 const router = Router();
@@ -64,6 +65,46 @@ router.post('/', validate, async (req, res, next) => {
   try {
     const { customername, location } = req.body;
     res.status(201).json(await customers.create({ customername: customername.trim(), location: location.trim() }, req.user.id));
+  } catch (e) { next(e); }
+});
+
+/**
+ * @openapi
+ * /api/customers/export:
+ *   get:
+ *     tags: [Customers]
+ *     summary: Export your customers to Excel
+ *     description: Downloads an .xlsx file with all of the logged-in user's customers (the name filter is not applied).
+ *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       200:
+ *         description: Excel workbook (sheet "Customers")
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema: { type: string, format: binary }
+ */
+// Registered before /:id so "export" is not read as an id
+router.get('/export', async (req, res, next) => {
+  try {
+    const rows = await customers.list(req.user.id);
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Customers', { views: [{ state: 'frozen', ySplit: 1 }] });
+    sheet.columns = [
+      { header: 'Customer ID', key: 'customer_id', width: 14 },
+      { header: 'Customer Name', key: 'customername', width: 32 },
+      { header: 'Location', key: 'location', width: 28 },
+    ];
+    sheet.getRow(1).font = { bold: true };
+    // Plain values only: text is stored as strings, never as formulas, so "=1+1" stays literal text
+    rows.forEach((c) => sheet.addRow({ customer_id: c.customer_id, customername: String(c.customername), location: String(c.location) }));
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="customers-${new Date().toISOString().slice(0, 10)}.xlsx"`,
+    });
+    res.send(Buffer.from(buffer));
   } catch (e) { next(e); }
 });
 

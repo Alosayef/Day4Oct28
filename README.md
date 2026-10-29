@@ -21,6 +21,9 @@ Try it in Swagger UI (`/swagger`):
 
 The same works with curl: `curl -H "Authorization: Bearer <token>" http://localhost:4000/api/customers`.
 
+## Export customers to Excel
+The **Export to Excel** button on the customer screen downloads `customers-YYYY-MM-DD.xlsx` with all of the logged-in user's customers (the search box is not applied). The API is `GET /api/customers/export` (Bearer token required; in Swagger UI use **Authorize**, then Try it out). Spec: `_specs/03_spec_export_customer.md`.
+
 ## Admin dashboard
 A separate admin login lists every user and how many customers each one has (read-only). Spec: `_specs/02_spec_admin_login.md`.
 

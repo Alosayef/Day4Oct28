@@ -14,7 +14,7 @@ const app = express();
 const origins = (process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim().replace(/\/$/, ''));
-app.use(cors({ origin: origins }));
+app.use(cors({ origin: origins, exposedHeaders: ['Content-Disposition'] }));
 app.use(express.json());
 
 // Swagger UI: assets come from a CDN so nothing in node_modules has to be served
