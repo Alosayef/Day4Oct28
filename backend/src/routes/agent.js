@@ -43,7 +43,15 @@ router.post('/', async (req, res, next) => {
   }
   try {
     res.json(await runAgent(message, req.user.id));
-  } catch (e) { next(e); }
+  } catch (e) {
+    // An error status here comes from the Anthropic API, not from the caller's session:
+    // never forward it as 401/403, or the client would treat it as an expired login.
+    if (e?.status) {
+      console.error('Anthropic API error:', e.status, e.message);
+      return res.status(502).json({ error: `AI service error (${e.status})` });
+    }
+    next(e);
+  }
 });
 
 export default router;
