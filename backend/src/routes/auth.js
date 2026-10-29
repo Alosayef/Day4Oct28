@@ -70,7 +70,7 @@ router.post('/register', async (req, res, next) => {
  *   post:
  *     tags: [Auth]
  *     summary: Log in and get a token
- *     description: Copy the returned token, click **Authorize** and paste it to call the protected endpoints.
+ *     description: For sales users (admins use `/api/admin/login`). Copy the returned token, click **Authorize** and paste it to call the protected endpoints.
  *     security: []
  *     requestBody:
  *       required: true
@@ -100,7 +100,7 @@ router.post('/login', async (req, res, next) => {
     const password = String(req.body?.password ?? '');
     const user = email ? await users.findByEmailWithHash(email) : undefined;
     // Same message whether the email or the password is wrong
-    if (!user || !(await verifyPassword(password, user.password_hash))) {
+    if (!user || !(await verifyPassword(password, user.password_hash)) || user.role === 'admin') {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
     res.json({ token: signToken(user), user: publicUser(user) });

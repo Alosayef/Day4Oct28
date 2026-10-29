@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { users } from './db.js';
 
 const TOKEN_TTL = '8h';
 
@@ -34,4 +35,14 @@ export function requireAuth(req, res, next) {
     }
     next(e); // e.g. missing JWT_SECRET -> 500
   }
+}
+
+/** Use after requireAuth. The role is read from the database, not trusted from the token. */
+export async function requireAdmin(req, res, next) {
+  try {
+    const user = await users.findById(req.user.id);
+    if (!user) return res.status(401).json({ error: 'Invalid or expired token' });
+    if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+    next();
+  } catch (e) { next(e); }
 }

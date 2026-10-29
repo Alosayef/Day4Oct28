@@ -25,10 +25,24 @@ export const users = {
     const { rows } = await pool.query(`SELECT ${USER_FIELDS} FROM users WHERE user_id = $1`, [id]);
     return rows[0];
   },
+  /** Admin dashboard: every user with their customer count (0 when none). */
+  async listWithCustomerCounts() {
+    const { rows } = await pool.query(
+      `SELECT u.user_id, u.name, u.email, u.role, u.created_at, COUNT(c.customer_id)::int AS customer_count
+       FROM users u LEFT JOIN customer c ON c.sales_user_id = u.user_id
+       GROUP BY u.user_id ORDER BY u.created_at DESC`
+    );
+    return rows;
+  },
 };
 
 // Every customer query is scoped to the owning sales user (userId), enforced in the SQL itself.
 export const customers = {
+  /** Count only (no rows): legacy customers that belong to nobody. For the admin totals. */
+  async countUnassigned() {
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM customer WHERE sales_user_id IS NULL');
+    return rows[0].n;
+  },
   async list(userId) {
     const { rows } = await pool.query(
       'SELECT * FROM customer WHERE sales_user_id = $1 ORDER BY customer_id',

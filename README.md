@@ -21,6 +21,13 @@ Try it in Swagger UI (`/swagger`):
 
 The same works with curl: `curl -H "Authorization: Bearer <token>" http://localhost:4000/api/customers`.
 
+## Admin dashboard
+A separate admin login lists every user and how many customers each one has (read-only). Spec: `_specs/02_spec_admin_login.md`.
+
+- `npm run migrate` creates the admin `admin@admin.com` (only if it does not exist yet) with the password `123456789`, or the value of `ADMIN_DEFAULT_PASSWORD` if set. **The default password is public; set `ADMIN_DEFAULT_PASSWORD` before migrating any real deployment.**
+- In the app, click **Admin login** on the login page. Admin accounts cannot use the sales login, and sales accounts cannot use the admin login.
+- Swagger: `POST /api/admin/login`, authorize with the token, then `GET /api/admin/users`.
+
 ## Deploy on Vercel
 Create two Vercel projects from this repo:
 

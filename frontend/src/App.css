@@ -116,3 +116,6 @@ button.chip:hover:not(:disabled) { color: var(--primary); border-color: var(--pr
   box-shadow: 0 6px 20px rgba(0, 0, 0, .2);
 }
 .toast.error { background: var(--danger); }
+
+.admin-layout { display: block; max-width: 900px; margin: 0 auto; }
+.auth-link { background: none; border: 0; color: var(--primary); cursor: pointer; font-size: 13px; margin-top: 14px; padding: 0; width: 100%; }

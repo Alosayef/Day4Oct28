@@ -34,14 +34,16 @@ async function request(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   // A 401 on a protected call means the session is gone; login/register 401s are shown inline instead
-  if (res.status === 401 && token && !path.startsWith('/api/auth/login')) onUnauthorized();
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (res.status === 401 && token && !path.endsWith('/login')) onUnauthorized();
+  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
   return data;
 }
 
 export const api = {
   register: (body) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  adminLogin: (body) => request('/api/admin/login', { method: 'POST', body: JSON.stringify(body) }),
+  adminUsers: () => request('/api/admin/users'),
   list: () => request('/api/customers'),
   create: (c) => request('/api/customers', { method: 'POST', body: JSON.stringify(c) }),
   update: (id, c) => request(`/api/customers/${id}`, { method: 'PUT', body: JSON.stringify(c) }),

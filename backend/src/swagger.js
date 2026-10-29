@@ -16,6 +16,7 @@ export default swaggerJsdoc({
     security: [{ bearerAuth: [] }], // default; the public auth endpoints override it with security: []
     tags: [
       { name: 'Auth', description: 'Register and log in to get a token' },
+      { name: 'Admin', description: 'Admin login and the users dashboard (admin accounts only)' },
       { name: 'Customers', description: "CRUD on the logged-in user's own customers" },
       { name: 'Agent', description: "Natural-language access to the logged-in user's customers" },
     ],
@@ -51,6 +52,26 @@ export default swaggerJsdoc({
           properties: {
             token: { type: 'string', description: 'JWT, valid for 8 hours' },
             user: { $ref: '#/components/schemas/User' },
+          },
+        },
+        AdminUserSummary: {
+          allOf: [
+            { $ref: '#/components/schemas/User' },
+            { type: 'object', properties: { customer_count: { type: 'integer', example: 5 } } },
+          ],
+        },
+        AdminUsersResponse: {
+          type: 'object',
+          properties: {
+            users: { type: 'array', items: { $ref: '#/components/schemas/AdminUserSummary' } },
+            totals: {
+              type: 'object',
+              properties: {
+                users: { type: 'integer', example: 12 },
+                customers: { type: 'integer', example: 40, description: 'Customers owned by any user' },
+                unassigned_customers: { type: 'integer', example: 8, description: 'Legacy customers with no owner' },
+              },
+            },
           },
         },
         Customer: {

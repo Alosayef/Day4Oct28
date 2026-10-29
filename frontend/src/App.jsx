@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, API_URL, session, setUnauthorizedHandler } from './api.js';
 import AuthScreen from './components/AuthScreen.jsx';
+import AdminLogin from './components/AdminLogin.jsx';
+import AdminDashboard from './components/AdminDashboard.jsx';
 import CustomerTable from './components/CustomerTable.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import './App.css';
@@ -73,8 +75,11 @@ function Dashboard({ user, onLogout }) {
 export default function App() {
   const [user, setUser] = useState(() => (session.token() ? session.user() : null));
 
+  const [adminMode, setAdminMode] = useState(false);
+
   const logout = useCallback(() => {
     session.clear();
+    setAdminMode(false);
     setUser(null); // unmounts Dashboard, which drops the previous user's data and chat
   }, []);
 
@@ -85,7 +90,12 @@ export default function App() {
     setUser(result.user);
   };
 
-  return user
-    ? <Dashboard user={user} onLogout={logout} />
-    : <AuthScreen onAuthenticated={authenticated} />;
+  if (user) {
+    return user.role === 'admin'
+      ? <AdminDashboard user={user} onLogout={logout} />
+      : <Dashboard user={user} onLogout={logout} />;
+  }
+  return adminMode
+    ? <AdminLogin onAuthenticated={authenticated} onBack={() => setAdminMode(false)} />
+    : <AuthScreen onAuthenticated={authenticated} onAdminLogin={() => setAdminMode(true)} />;
 }

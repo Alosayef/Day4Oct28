@@ -5,6 +5,7 @@ import spec from './swagger.js';
 import customerRoutes from './routes/customers.js';
 import agentRoutes from './routes/agent.js';
 import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
 import { requireAuth } from './auth.js';
 
 const app = express();
@@ -40,6 +41,7 @@ app.get(['/swagger', '/swagger/'], (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/customers', requireAuth, customerRoutes);
 app.use('/api/agent', requireAuth, agentRoutes);
 app.get('/', (_req, res) => res.redirect('/swagger'));
