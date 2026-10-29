@@ -36,6 +36,74 @@ export const users = {
   },
 };
 
+// amount: NUMERIC arrives as a string from pg, so cast to a number. expected_close_date: DATE would
+// arrive as a JS Date shifted by the server time zone, so return the YYYY-MM-DD text instead.
+const DEAL_FIELDS = `d.deal_id, d.customer_id, d.title, d.amount::float8 AS amount, d.stage,
+  to_char(d.expected_close_date, 'YYYY-MM-DD') AS expected_close_date, d.created_at, d.updated_at`;
+
+// A deal has no owner column: every query joins its customer and filters on customer.sales_user_id.
+export const deals = {
+  async listByCustomer(customerId, userId) {
+    const { rows } = await pool.query(
+      `SELECT ${DEAL_FIELDS} FROM deal d JOIN customer c ON c.customer_id = d.customer_id
+       WHERE d.customer_id = $1 AND c.sales_user_id = $2
+       ORDER BY d.created_at DESC, d.deal_id DESC`,
+      [customerId, userId]
+    );
+    return rows;
+  },
+  async get(id, userId) {
+    const { rows } = await pool.query(
+      `SELECT ${DEAL_FIELDS} FROM deal d JOIN customer c ON c.customer_id = d.customer_id
+       WHERE d.deal_id = $1 AND c.sales_user_id = $2`,
+      [id, userId]
+    );
+    return rows[0];
+  },
+  /** Inserts nothing (returns undefined) when the customer is missing or not owned by userId. */
+  async create(customerId, { title, amount, stage, expected_close_date }, userId) {
+    const { rows } = await pool.query(
+      `WITH ins AS (
+         INSERT INTO deal (customer_id, title, amount, stage, expected_close_date)
+         SELECT customer_id, $3::varchar, $4::numeric, $5::varchar, $6::date FROM customer WHERE customer_id = $1 AND sales_user_id = $2
+         RETURNING *
+       ) SELECT ${DEAL_FIELDS} FROM ins d`,
+      [customerId, userId, title, amount, stage, expected_close_date]
+    );
+    return rows[0];
+  },
+  /** Only the keys present in `fields` change; expected_close_date can be set back to null. */
+  async update(id, fields, userId) {
+    const hasDate = 'expected_close_date' in fields;
+    const { rows } = await pool.query(
+      `WITH upd AS (
+         UPDATE deal d SET title = COALESCE($3, d.title),
+                           amount = COALESCE($4, d.amount),
+                           stage = COALESCE($5, d.stage),
+                           expected_close_date = CASE WHEN $6 THEN $7::date ELSE d.expected_close_date END,
+                           updated_at = now()
+         FROM customer c
+         WHERE d.customer_id = c.customer_id AND d.deal_id = $1 AND c.sales_user_id = $2
+         RETURNING d.*
+       ) SELECT ${DEAL_FIELDS} FROM upd d`,
+      [id, userId, fields.title ?? null, fields.amount ?? null, fields.stage ?? null,
+        hasDate, hasDate ? fields.expected_close_date : null]
+    );
+    return rows[0];
+  },
+  async remove(id, userId) {
+    const { rows } = await pool.query(
+      `WITH del AS (
+         DELETE FROM deal d USING customer c
+         WHERE d.customer_id = c.customer_id AND d.deal_id = $1 AND c.sales_user_id = $2
+         RETURNING d.*
+       ) SELECT ${DEAL_FIELDS} FROM del d`,
+      [id, userId]
+    );
+    return rows[0];
+  },
+};
+
 // Every customer query is scoped to the owning sales user (userId), enforced in the SQL itself.
 export const customers = {
   /** Count only (no rows): legacy customers that belong to nobody. For the admin totals. */

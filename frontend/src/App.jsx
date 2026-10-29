@@ -4,6 +4,7 @@ import AuthScreen from './components/AuthScreen.jsx';
 import AdminLogin from './components/AdminLogin.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import CustomerTable from './components/CustomerTable.jsx';
+import DealsPanel from './components/DealsPanel.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import './App.css';
 
@@ -11,11 +12,12 @@ function Dashboard({ user, onLogout }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [dealsFor, setDealsFor] = useState(null); // customer whose deals panel is open
 
-  const notify = (text, error = false) => {
+  const notify = useCallback((text, error = false) => {
     setToast({ text, error });
     setTimeout(() => setToast(null), 3500);
-  };
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -25,7 +27,7 @@ function Dashboard({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -59,7 +61,11 @@ function Dashboard({ user, onLogout }) {
   };
 
   const remove = async (c) => {
-    if (!window.confirm(`Delete ${c.customername}?`)) return;
+    // Warn when the customer's deals will go with it; if the lookup fails, fall back to the plain message
+    let dealCount = 0;
+    try { dealCount = (await api.listDeals(c.customer_id)).length; } catch { /* plain confirmation */ }
+    const dealsNote = dealCount > 0 ? ` and its ${dealCount} ${dealCount === 1 ? 'deal' : 'deals'}` : '';
+    if (!window.confirm(`Delete ${c.customername}${dealsNote}?`)) return;
     try {
       await api.remove(c.customer_id);
       await load();
@@ -79,9 +85,10 @@ function Dashboard({ user, onLogout }) {
         <button className="btn" onClick={onLogout}>Log out</button>
       </nav>
       <main className="layout">
-        <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} onExport={exportToExcel} />
+        <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} onExport={exportToExcel} onDeals={setDealsFor} />
         <ChatPanel onDataChanged={load} />
       </main>
+      {dealsFor && <DealsPanel customer={dealsFor} onClose={() => setDealsFor(null)} notify={notify} />}
       {toast && <div className={`toast${toast.error ? ' error' : ''}`}>{toast.text}</div>}
     </div>
   );

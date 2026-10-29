@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function CustomerTable({ customers, loading, onSave, onDelete, onExport }) {
+export default function CustomerTable({ customers, loading, onSave, onDelete, onExport, onDeals }) {
   const [exporting, setExporting] = useState(false);
   const [editing, setEditing] = useState(null); // customer_id being edited
   const [draft, setDraft] = useState({ customername: '', location: '' });
@@ -94,6 +94,7 @@ export default function CustomerTable({ customers, loading, onSave, onDelete, on
                     <td><span className="avatar">{c.customername[0]?.toUpperCase()}</span>{c.customername}</td>
                     <td>{c.location}</td>
                     <td className="actions">
+                      <button className="btn" onClick={() => onDeals(c)}>Deals</button>
                       <button className="btn" onClick={() => startEdit(c)}>Edit</button>
                       <button className="btn danger" onClick={() => onDelete(c)}>Delete</button>
                     </td>

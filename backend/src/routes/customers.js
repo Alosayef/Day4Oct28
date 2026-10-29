@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import ExcelJS from 'exceljs';
-import { customers } from '../db.js';
+import { customers, deals } from '../db.js';
+import { parseDealBody, positiveInt } from './deals.js';
 
 const router = Router();
 
@@ -184,6 +185,75 @@ router.delete('/:id', idParam, async (req, res, next) => {
   try {
     const c = await customers.remove(req.id, req.user.id);
     c ? res.json(c) : res.status(404).json({ error: 'Customer not found' });
+  } catch (e) { next(e); }
+});
+
+/**
+ * @openapi
+ * /api/customers/{id}/deals:
+ *   get:
+ *     tags: [Deals]
+ *     summary: List a customer's deals (newest first)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       400: { description: Invalid id, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       200:
+ *         description: The customer's deals (empty array when none)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items: { $ref: '#/components/schemas/Deal' }
+ *       404: { description: Customer not found (or owned by another user) }
+ *   post:
+ *     tags: [Deals]
+ *     summary: Add a deal to a customer
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema: { $ref: '#/components/schemas/DealInput' }
+ *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       400: { description: Invalid input, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Deal' }
+ *       404: { description: Customer not found (or owned by another user) }
+ */
+const customerIdParam = (req, res, next) => {
+  const id = positiveInt(req.params.id);
+  if (!id) return res.status(400).json({ error: 'id must be a positive integer' });
+  req.id = id;
+  next();
+};
+
+router.get('/:id/deals', customerIdParam, async (req, res, next) => {
+  try {
+    // Ownership check first: another user's customer looks the same as a missing one
+    if (!(await customers.get(req.id, req.user.id))) return res.status(404).json({ error: 'Customer not found' });
+    res.json(await deals.listByCustomer(req.id, req.user.id));
+  } catch (e) { next(e); }
+});
+
+router.post('/:id/deals', customerIdParam, async (req, res, next) => {
+  try {
+    const { error, value } = parseDealBody(req.body, { partial: false });
+    if (error) return res.status(400).json({ error });
+    const d = await deals.create(req.id, value, req.user.id);
+    d ? res.status(201).json(d) : res.status(404).json({ error: 'Customer not found' });
   } catch (e) { next(e); }
 });
 

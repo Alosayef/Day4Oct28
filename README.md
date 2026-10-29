@@ -24,6 +24,13 @@ The same works with curl: `curl -H "Authorization: Bearer <token>" http://localh
 ## Export customers to Excel
 The **Export to Excel** button on the customer screen downloads `customers-YYYY-MM-DD.xlsx` with all of the logged-in user's customers (the search box is not applied). The API is `GET /api/customers/export` (Bearer token required; in Swagger UI use **Authorize**, then Try it out). Spec: `_specs/03_spec_export_customer.md`.
 
+## Customer deals
+A deal is one sales opportunity with a customer (title, amount in US dollars, stage, optional expected close date). A customer can have many deals. Stages: `lead` → `qualified` → `proposal` → `won` / `lost` (any stage can be set at any time). Click **Deals** on a customer row to add, edit, change the stage of, or delete its deals; deleting a customer also deletes its deals.
+
+- API (Bearer token required, own customers only; other users' data returns `404`): `GET` and `POST /api/customers/{id}/deals`, and `GET`, `PUT`, `DELETE /api/deals/{dealId}`. In Swagger UI see the **Deals** tag.
+- Existing databases: run `cd backend && npm run migrate` (adds the `deal` table, safe to run again) **before** deploying the backend.
+- Spec: `_specs/04_spec_customer_deals.md`.
+
 ## Admin dashboard
 A separate admin login lists every user and how many customers each one has (read-only). Spec: `_specs/02_spec_admin_login.md`.
 

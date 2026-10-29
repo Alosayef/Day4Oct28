@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import spec from './swagger.js';
 import customerRoutes from './routes/customers.js';
+import dealRoutes from './routes/deals.js';
 import agentRoutes from './routes/agent.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
@@ -43,6 +44,7 @@ app.get(['/swagger', '/swagger/'], (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers', requireAuth, customerRoutes);
+app.use('/api/deals', requireAuth, dealRoutes);
 app.use('/api/agent', requireAuth, agentRoutes);
 app.get('/', (_req, res) => res.redirect('/swagger'));
 
