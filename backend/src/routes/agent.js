@@ -22,6 +22,7 @@ const router = Router();
  *             properties:
  *               message: { type: string, example: Get all customers }
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       200:
  *         description: Agent answer and the tool calls it made
  *         content:
@@ -41,7 +42,7 @@ router.post('/', async (req, res, next) => {
     return res.status(503).json({ error: 'ANTHROPIC_API_KEY is not set on the server' });
   }
   try {
-    res.json(await runAgent(message));
+    res.json(await runAgent(message, req.user.id));
   } catch (e) { next(e); }
 });
 

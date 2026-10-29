@@ -54,23 +54,26 @@ const tools = [
 
 const notFound = (r) => r ?? { error: 'Customer not found' };
 
-const handlers = {
-  get_all_customers: () => customers.list(),
-  get_customer_by_name: ({ name }) => customers.searchByName(name),
-  add_customer: (input) => customers.create(input),
-  update_customer: ({ customer_id, ...rest }) => customers.update(customer_id, rest).then(notFound),
-  delete_customer: ({ customer_id }) => customers.remove(customer_id).then(notFound),
-};
+// Handlers are bound to the logged-in user; the model never supplies a user id.
+const makeHandlers = (userId) => ({
+  get_all_customers: () => customers.list(userId),
+  get_customer_by_name: ({ name }) => customers.searchByName(name, userId),
+  add_customer: (input) => customers.create(input, userId),
+  update_customer: ({ customer_id, ...rest }) => customers.update(customer_id, rest, userId).then(notFound),
+  delete_customer: ({ customer_id }) => customers.remove(customer_id, userId).then(notFound),
+});
 
 const SYSTEM =
   'You are an assistant for a customer database (fields: customer_id, customername, location). ' +
+  "You can only access the currently logged-in sales user's own customers; you cannot see or change anyone else's. " +
   'Use the provided tools to read or change data; never invent records. Keep answers concise.';
 
 let client;
 
-/** Runs the tool-use loop. Returns { answer, toolCalls }. */
-export async function runAgent(message, history = []) {
+/** Runs the tool-use loop for one user. Returns { answer, toolCalls }. */
+export async function runAgent(message, userId, history = []) {
   client ??= new Anthropic(); // reads ANTHROPIC_API_KEY
+  const handlers = makeHandlers(userId);
   const messages = [...history, { role: 'user', content: message }];
   const toolCalls = [];
 

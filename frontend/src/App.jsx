@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, API_URL } from './api.js';
+import { api, API_URL, session, setUnauthorizedHandler } from './api.js';
+import AuthScreen from './components/AuthScreen.jsx';
 import CustomerTable from './components/CustomerTable.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import './App.css';
 
-export default function App() {
+function Dashboard({ user, onLogout }) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -57,6 +58,8 @@ export default function App() {
         <span className="logo">◆</span>
         <strong>Customer Hub</strong>
         <a href={`${API_URL}/swagger`} target="_blank" rel="noreferrer">API docs ↗</a>
+        <span className="user-name">{user.name}</span>
+        <button className="btn" onClick={onLogout}>Log out</button>
       </nav>
       <main className="layout">
         <CustomerTable customers={customers} loading={loading} onSave={save} onDelete={remove} />
@@ -65,4 +68,24 @@ export default function App() {
       {toast && <div className={`toast${toast.error ? ' error' : ''}`}>{toast.text}</div>}
     </div>
   );
+}
+
+export default function App() {
+  const [user, setUser] = useState(() => (session.token() ? session.user() : null));
+
+  const logout = useCallback(() => {
+    session.clear();
+    setUser(null); // unmounts Dashboard, which drops the previous user's data and chat
+  }, []);
+
+  useEffect(() => { setUnauthorizedHandler(logout); }, [logout]);
+
+  const authenticated = (result) => {
+    session.save(result);
+    setUser(result.user);
+  };
+
+  return user
+    ? <Dashboard user={user} onLogout={logout} />
+    : <AuthScreen onAuthenticated={authenticated} />;
 }

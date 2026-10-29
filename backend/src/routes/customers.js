@@ -30,6 +30,7 @@ const idParam = (req, res, next) => {
  *         schema: { type: string }
  *         description: Optional case-insensitive name filter
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       200:
  *         description: List of customers
  *         content:
@@ -46,6 +47,7 @@ const idParam = (req, res, next) => {
  *         application/json:
  *           schema: { $ref: '#/components/schemas/CustomerInput' }
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       201:
  *         description: Created
  *         content:
@@ -54,14 +56,14 @@ const idParam = (req, res, next) => {
  */
 router.get('/', async (req, res, next) => {
   try {
-    res.json(req.query.name ? await customers.searchByName(req.query.name) : await customers.list());
+    res.json(req.query.name ? await customers.searchByName(req.query.name, req.user.id) : await customers.list(req.user.id));
   } catch (e) { next(e); }
 });
 
 router.post('/', validate, async (req, res, next) => {
   try {
     const { customername, location } = req.body;
-    res.status(201).json(await customers.create({ customername: customername.trim(), location: location.trim() }));
+    res.status(201).json(await customers.create({ customername: customername.trim(), location: location.trim() }, req.user.id));
   } catch (e) { next(e); }
 });
 
@@ -77,6 +79,7 @@ router.post('/', validate, async (req, res, next) => {
  *         required: true
  *         schema: { type: integer }
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       200:
  *         description: The customer
  *         content:
@@ -97,6 +100,7 @@ router.post('/', validate, async (req, res, next) => {
  *         application/json:
  *           schema: { $ref: '#/components/schemas/CustomerInput' }
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       200:
  *         description: Updated
  *         content:
@@ -112,6 +116,7 @@ router.post('/', validate, async (req, res, next) => {
  *         required: true
  *         schema: { type: integer }
  *     responses:
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  *       200:
  *         description: Deleted customer
  *         content:
@@ -121,7 +126,7 @@ router.post('/', validate, async (req, res, next) => {
  */
 router.get('/:id', idParam, async (req, res, next) => {
   try {
-    const c = await customers.get(req.id);
+    const c = await customers.get(req.id, req.user.id);
     c ? res.json(c) : res.status(404).json({ error: 'Customer not found' });
   } catch (e) { next(e); }
 });
@@ -129,14 +134,14 @@ router.get('/:id', idParam, async (req, res, next) => {
 router.put('/:id', idParam, validate, async (req, res, next) => {
   try {
     const { customername, location } = req.body;
-    const c = await customers.update(req.id, { customername: customername.trim(), location: location.trim() });
+    const c = await customers.update(req.id, { customername: customername.trim(), location: location.trim() }, req.user.id);
     c ? res.json(c) : res.status(404).json({ error: 'Customer not found' });
   } catch (e) { next(e); }
 });
 
 router.delete('/:id', idParam, async (req, res, next) => {
   try {
-    const c = await customers.remove(req.id);
+    const c = await customers.remove(req.id, req.user.id);
     c ? res.json(c) : res.status(404).json({ error: 'Customer not found' });
   } catch (e) { next(e); }
 });
